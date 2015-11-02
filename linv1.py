@@ -41,6 +41,7 @@ P_tablex = R_tablex = E_tablex = ssize = filesize = textsize = E_tablexstart = R
 gots = False
 saves = ''
 ifilename = ''
+text_buffer = [0]*MACSIZE+1
 
 def ierror():
 	print("Input file " + str(ifilename) + " is not linkable\n")
@@ -131,7 +132,7 @@ def processfile():
 	
 def doifile():
 	pcat = ''
-	global ifilename 
+	global ifilename, out_stream 
 
 	if not(ifilename.endswith('.mob')):
 		ifilename = ifilename + '.mob' 
@@ -172,8 +173,12 @@ def doifile():
 	processfile()
 	
 def main():
-	global ifilename
+	global ifilename, out_stream
+	
+	i = j = 0
+	
 	print("Brandon Walsh")
+	
 	
 	if len(sys.argv) < 3:
 		print("ERROR: Incorrect number of command line args")
@@ -181,8 +186,47 @@ def main():
 	print(sys.argv[0])
 	
 	for argx in range (1, len(sys.argv)):
-		
 		ifilename = sys.argv[argx]
 		doifile()
 	
+	for E_tablexstart in range (E_tablexstart, E_tablex):
+		j = 0
+	
+	while j < P_tablex and P_table[j].symptr != E_table[E_tablexstart].symptr:
+		j += 1
+		
+		if j < P_tablex:
+			text_buffer[E_table[E_tablexstart].address] = text_buffer[E_table[E_tablexstart].address] & 0xf000 | (text_buffer[E_table[E_tablexstart].address] + P_table[j].address ) & 0x0fff
+		else:
+			break
+	
+	if E_tablexstart != E_tablex:
+		print("ERROR: Unresolved external symbol " + E_table[E_tablexstart].symptr)
+		sys.exit()
+		
+	for R_tablexstart in range (R_tablexstart, R_tablex):
+		text_buffer[R_table[R_tablexstart].address] = text_buffer[R_table[R_tablexstart].address] & 0xf000 | (text_buffer[R_table[R_tablexstart].address] + R_table[R_tablexstart].module_address) & 0x0fff
+		
+	for i in range (0, P_tablex):
+		out_stream.write("P")
+		out_stream.write(P_table[i].addres)
+		out_stream.write(P_table[i].symptr)
+	
+	for i in range (0, R_tablex):
+		out_stream.write("R")
+		out_stream.write(R_table[i].address)
+	
+	for i in range(0, E_tablex):
+		out_stream.write("R")
+		out_stream.write(E_table[i].address)
+	
+	if gots:
+		out_stream.write(saves)
+		out_stream.write(startadd)
+
+	out_stream.write("T")
+	
+	out_stream.write(str(text_buffer))
+	
+	out_stream.close()
 main()
