@@ -41,48 +41,48 @@ P_tablex = R_tablex = E_tablex = ssize = filesize = textsize = E_tablexstart = R
 gots = False
 saves = ''
 ifilename = ''
-text_buffer = [0] * (MACSIZE+1)
+ofilename = ''
+#text_buffer = [0] * (MACSIZE+1)
+text_buffer = [0]
 file_buffer = '' * FILE_BUF_SIZE
+file = None
+in_stream = None
+out_stream = None
 
 def ierror():
 	print("Input file " + str(ifilename) + " is not linkable\n")
 	sys.exit()
-
-def processfile():
-	firstchar = fptr = endptr = ''
-	i = address = ''
 	
-	endptr = len(file_buffer) + filesize;
-	fptr = len(file_buffer)
+def processfile():
+	global in_stream, module_address, P_table, E_table, R_table, P_tablex, E_tablex, R_tablex
+	address = 0
+	i = 1
 	
 	while True:
-		firstchar = fptr
-		fptr += 1
+		firstchar = in_stream.read(i)
+		print "here" + firstchar
 		
 		if firstchar == 'T':
-			textsize = endptr - fptr
-			if (textsize/2) > MACSIZE - module_address:
+			textsize = len(file.read())
+			if textsize/2 > MACSIZE - module_address:
 				print("ERROR: Linked program too big")
 				sys.exit()
 			
-			#memcpy(&text_buffer[module_address], fptr, textsize);
+			text_buffer[module_address] = textsize
 			
 			module_address += textsize/2
 			break
-		
+	
 		if firstchar != 'S' and firstchar != 's' and firstchar != 'P' and firstchar != 'E' and firstchar != 'R':
 			ierror()
 		else:
-			address = fptr
-			fptr = fptr + 2
-			
-			if fptr > endptr:
-				ierror()
+			#address = 2
 			
 			if firstchar == 'S' or firstchar == 's':
-				if(gots):
+				if gots:
 					print("ERROR: More than one starting add")
 					sys.exit()
+				
 				gots = True
 				saves = firstchar
 				
@@ -91,55 +91,52 @@ def processfile():
 				else:
 					startadd = address + module_address
 				continue
-			
+	
 			if firstchar == 'P':
 				if P_tablex >= P_TABLE_SIZE:
 					print("ERROR: P table overflow")
 					sys.exit();
-             
-				P_table[P_tablex].address = module_address + address;
+	         
+				P_table[P_tablex].address = module_address + address
 			else:
 				if firstchar == 'E':
 					if E_tablex >= E_TABLE_SIZE:
 						print("ERROR: E table overflow")
 						sys.exit();
-             
-					E_table[E_tablex].address = module_address + address;
+	         
+					E_table[E_tablex].address = module_address + address
 				else:
 					if firstchar == 'R':
 						if R_tablex >= R_TABLE_SIZE:
 							print("ERROR: R table overflow")
 							sys.exit();
-             
+	         
 						R_table[R_tablex].module_address = module_address
 						R_table[R_tablex].address = module_address + address
 						R_tablex += 1
 						continue
-			
-			ssize = len(fptr) + 1
-			
+	
 			if firstchar == 'P':
 				for i in range (0, P_tablex):
-					if fptr == P_tablex[i].symptr:
-						print("ERROR: Duplicate PUBLIC symbol" + fptr)
+					if firstchar == P_tablex[i].symptr:
+						print("ERROR: Duplicate PUBLIC symbol" + firstchar)
 						sys.exit()
-				P_table[P_tablex].symptr = fptr
+				P_table[P_tablex].symptr = firstchar
 				P_tablex += 1
 			else:
-				E_table[E_tablex].symptr = fptr
+				E_table[E_tablex].symptr = firstchar
 			
-			fptr = fptr + len(fptr) + 1
-			continue
-		
-		return
-	
-def doifile():
-	pcat = ''
-	global ifilename, out_stream, ofopen 
+			i += 1
 
+		return
+
+def doifile():
+	global ifilename, out_stream, ofopen, in_stream, ofilename
+	
 	if not(ifilename.endswith('.mob')):
-		ifilename = ifilename + '.mob' 
-		 
+		ifilename = ifilename + '.mob'
+	
+	
 	if platform.system() == 'Windows':
 		in_stream = open(ifilename, 'rb')
 	else:
@@ -148,12 +145,12 @@ def doifile():
 	if not(in_stream):
 		print("ERROR: Cannot open input file" + ifilename)
 		sys.exit()
-
+	
 	if not(ofopen):
 		ofopen = 1
 		ofilename = ifilename
-		ofilename.rsplit( ".", 1 )[ 0 ]	#rid of ./mob
-		ofilename + '.mac' #add .mac
+		ofilename = ofilename.rsplit( ".", 1 )[ 0 ]	#rid of ./mob
+		ofilename = ofilename + '.mac' #add .mac
 	
 		if platform.system() == 'Windows':
 			out_stream = open(ofilename, "wb")
@@ -164,20 +161,16 @@ def doifile():
 			print("ERROR: Cannot open output file" + ofilename)
 			sys.exit()
 	
-	filesize = in_stream.read(FILE_BUF_SIZE)
-	in_stream.close()
-	
-	if filesize == FILE_BUF_SIZE:
-		print("Input file" + ifilename + "is too big")
-		sys.exit()
-	
+
+	#if filesize == FILE_BUF_SIZE:
+		#print("Input file" + ifilename + "is too big")
+		#sys.exit()
+
 	processfile()
-	
+
 def main():
-	global ifilename, out_stream
-	
-	i = j = 0
-	
+	global ifilename, out_stream, E_tablexstart,R_tablexstart,P_tablexstart
+	j = 0
 	print("Brandon Walsh")
 	
 	
@@ -205,17 +198,17 @@ def main():
 		print("ERROR: Unresolved external symbol " + E_table[E_tablexstart].symptr)
 		sys.exit()
 		
-	for R_tablexstart in range (R_tablexstart, R_tablex):
-		text_buffer[R_table[R_tablexstart].address] = text_buffer[R_table[R_tablexstart].address] & 0xf000 | (text_buffer[R_table[R_tablexstart].address] + R_table[R_tablexstart].module_address) & 0x0fff
+	#for R_tablexstart in range (R_tablexstart, R_tablex):
+		#text_buffer[R_table[R_tablexstart].address] = text_buffer[R_table[R_tablexstart].address] & 0xf000 | (text_buffer[R_table[R_tablexstart].address] + R_table[R_tablexstart].module_address) & 0x0fff
 		
 	for i in range (0, P_tablex):
 		out_stream.write("P")
-		out_stream.write(P_table[i].addres)
+		out_stream.write(str(P_table[i].address))
 		out_stream.write(P_table[i].symptr)
 	
 	for i in range (0, R_tablex):
 		out_stream.write("R")
-		out_stream.write(R_table[i].address)
+		out_stream.write(str(R_table[i].address))
 	
 	for i in range(0, E_tablex):
 		out_stream.write("R")
@@ -232,4 +225,5 @@ def main():
 	out_stream.close()
 
 	print("here")
+
 main()
