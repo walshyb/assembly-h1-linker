@@ -41,7 +41,7 @@ P_tablex = R_tablex = E_tablex = ssize = filesize = textsize = E_tablexstart = R
 gots = False
 saves = ''
 ifilename = ''
-text_buffer = [0]*MACSIZE+1
+text_buffer = [0] * (MACSIZE+1)
 
 def ierror():
 	print("Input file " + str(ifilename) + " is not linkable\n")
@@ -51,7 +51,9 @@ def processfile():
 	firstchar = fptr = endptr = ''
 	i = address = ''
 	
-	#endptr = file_buffer + filesize;
+	endptr = file_buffer + filesize;
+	fptr = file_buffer
+	
 	while True:
 		firstchar = fptr
 		fptr += 1
@@ -132,13 +134,11 @@ def processfile():
 	
 def doifile():
 	pcat = ''
-	global ifilename, out_stream 
+	global ifilename, out_stream, ofopen 
 
 	if not(ifilename.endswith('.mob')):
 		ifilename = ifilename + '.mob' 
-	
-	print ifilename
-	 
+		 
 	if platform.system() == 'Windows':
 		in_stream = open(ifilename, 'rb')
 	else:
@@ -146,7 +146,7 @@ def doifile():
 		
 	if not(in_stream):
 		print("ERROR: Cannot open input file" + ifilename)
-    	sys.exit()
+		sys.exit()
 
 	if not(ofopen):
 		ofopen = 1
@@ -183,7 +183,7 @@ def main():
 	if len(sys.argv) < 3:
 		print("ERROR: Incorrect number of command line args")
 		sys.exit()
-	print(sys.argv[0])
+	#print(sys.argv[0])
 	
 	for argx in range (1, len(sys.argv)):
 		ifilename = sys.argv[argx]
@@ -229,4 +229,6 @@ def main():
 	out_stream.write(str(text_buffer))
 	
 	out_stream.close()
+
+	print("here")
 main()
