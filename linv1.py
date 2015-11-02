@@ -42,6 +42,7 @@ gots = False
 saves = ''
 ifilename = ''
 text_buffer = [0] * (MACSIZE+1)
+file_buffer = '' * FILE_BUF_SIZE
 
 def ierror():
 	print("Input file " + str(ifilename) + " is not linkable\n")
@@ -51,8 +52,8 @@ def processfile():
 	firstchar = fptr = endptr = ''
 	i = address = ''
 	
-	endptr = file_buffer + filesize;
-	fptr = file_buffer
+	endptr = len(file_buffer) + filesize;
+	fptr = len(file_buffer)
 	
 	while True:
 		firstchar = fptr
