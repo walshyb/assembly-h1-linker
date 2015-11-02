@@ -76,7 +76,7 @@ def processfile():
 		if firstchar != 'S' and firstchar != 's' and firstchar != 'P' and firstchar != 'E' and firstchar != 'R':
 			ierror()
 		else:
-			#address = 2
+			address = 2
 			
 			if firstchar == 'S' or firstchar == 's':
 				if gots:
@@ -177,8 +177,7 @@ def main():
 	if len(sys.argv) < 3:
 		print("ERROR: Incorrect number of command line args")
 		sys.exit()
-	#print(sys.argv[0])
-	
+
 	for argx in range (1, len(sys.argv)):
 		ifilename = sys.argv[argx]
 		doifile()
