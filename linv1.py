@@ -42,8 +42,8 @@ gots = False
 saves = ''
 ifilename = ''
 ofilename = ''
-#text_buffer = [0] * (MACSIZE+1)
-text_buffer = [0]
+text_buffer = [0] * (MACSIZE+1)
+#text_buffer = ''
 file_buffer = '' * FILE_BUF_SIZE
 file = None
 in_stream = None
@@ -52,14 +52,14 @@ out_stream = None
 def ierror():
 	print("Input file " + str(ifilename) + " is not linkable\n")
 	sys.exit()
-	
+'''	
 def processfile():
 	global in_stream, module_address, P_table, E_table, R_table, P_tablex, E_tablex, R_tablex
 	address = 0
 	i = 1
-	
 	while True:
 		firstchar = in_stream.read(i)
+		i = i +1
 		print "here" + firstchar
 		
 		if firstchar == 'T':
@@ -76,7 +76,7 @@ def processfile():
 		if firstchar != 'S' and firstchar != 's' and firstchar != 'P' and firstchar != 'E' and firstchar != 'R':
 			ierror()
 		else:
-			address = 2
+			address = 1
 			
 			if firstchar == 'S' or firstchar == 's':
 				if gots:
@@ -98,6 +98,8 @@ def processfile():
 					sys.exit();
 	         
 				P_table[P_tablex].address = module_address + address
+				print module_address
+				print address
 			else:
 				if firstchar == 'E':
 					if E_tablex >= E_TABLE_SIZE:
@@ -117,19 +119,55 @@ def processfile():
 						continue
 	
 			if firstchar == 'P':
-				for i in range (0, P_tablex):
-					if firstchar == P_tablex[i].symptr:
+				print "in last P check"
+				for j in range (0, P_tablex):
+					if firstchar == P_table[j].symptr:
 						print("ERROR: Duplicate PUBLIC symbol" + firstchar)
 						sys.exit()
 				P_table[P_tablex].symptr = firstchar
 				P_tablex += 1
 			else:
 				E_table[E_tablex].symptr = firstchar
-			
-			i += 1
-
 		return
-
+'''
+def processfile():
+	global in_stream, startadd, gots, module_address, P_table, E_table, R_table, P_tablex, E_tablex, R_tablex
+	
+	address = 0
+	
+	with in_stream as file:
+ 		while True:
+			char = file.read(1)
+			#check if char (word) is P,E,R, or T
+			#check if word is 2bit hex 
+			if not char:
+				print "End of file"
+				break
+			
+			if char == 'T':
+				print 't'
+				#do stuff
+			#if char != 'S' and char != 's' and char != 'P' and char != 'E' and char != 'R':
+			#	ierror()
+			#else:
+			if char == 'S' or char == 's':
+				if gots:
+					print("ERROR: More than one starting add\n")
+					sys.exit()
+				gots = True
+				saves = char
+				
+				if char == 'S':
+					startadd = address
+				else:
+					startadd = address + module_address
+				continue
+			
+			if char == ' ':
+				print char.encode('hex')
+			else:
+				print char
+	
 def doifile():
 	global ifilename, out_stream, ofopen, in_stream, ofilename
 	
@@ -169,7 +207,7 @@ def doifile():
 	processfile()
 
 def main():
-	global ifilename, out_stream, E_tablexstart,R_tablexstart,P_tablexstart
+	global ifilename, out_stream, in_stream, E_tablexstart,R_tablexstart,P_tablexstart
 	j = 0
 	print("Brandon Walsh")
 	
@@ -177,7 +215,11 @@ def main():
 	if len(sys.argv) < 3:
 		print("ERROR: Incorrect number of command line args")
 		sys.exit()
-
+		
+	
+	in_stream = open('testb.mob', 'r')
+	processfile()
+	'''
 	for argx in range (1, len(sys.argv)):
 		ifilename = sys.argv[argx]
 		doifile()
@@ -224,5 +266,5 @@ def main():
 	out_stream.close()
 
 	print("here")
-
+	'''
 main()
