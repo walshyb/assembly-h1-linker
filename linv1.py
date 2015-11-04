@@ -2,6 +2,7 @@
 
 import sys
 import platform
+import string
 
 if platform.system() == 'Windows':
 	fdiv = "\\"
@@ -163,11 +164,24 @@ def processfile():
 					startadd = address + module_address
 				continue
 			
-			if char == ' ':
-				print char.encode('hex')
-			else:
+			print char.encode('hex')
+			'''
+			if char == 'P' or char == 'E' or char == 'R' or char == 'T':
 				print char
-	
+			else:
+				print char.encode('hex')
+			'''
+			
+	#guaranteed to read by byte
+	with open('testb.mob',"rb") as f:
+		block = f.read(1024)
+		str = ""
+		print "block" + block
+		for ch in block:
+			str += hex(ord(ch)).lstrip("0x").zfill(2) + " "
+		print str
+		
+		
 def doifile():
 	global ifilename, out_stream, ofopen, in_stream, ofilename
 	
@@ -217,7 +231,7 @@ def main():
 		sys.exit()
 		
 	
-	in_stream = open('testb.mob', 'r')
+	in_stream = open('testb.mob', 'rb')
 	processfile()
 	'''
 	for argx in range (1, len(sys.argv)):
