@@ -38,6 +38,10 @@ P_table = [PTYPE()] * P_TABLE_SIZE
 E_table = [ETYPE()] * E_TABLE_SIZE
 R_table = [RTYPE()] * R_TABLE_SIZE
 
+#P_table = []
+#E_table = []
+#R_table = []
+
 P_tablex = R_tablex = E_tablex = ssize = filesize = textsize = E_tablexstart = R_tablexstart = ofopen = startadd = module_address = 0
 gots = False
 saves = ''
@@ -145,8 +149,13 @@ def processfile():
 				print "End of file"
 				break
 			
-			if char == 'T':
-				print 't'
+			#if char == 'T':
+				#print ''
+			
+			if char in string.printable: #if char is word/symbol or hex data
+				print char
+			else: 
+				print char.encode('hex')
 				#do stuff
 			#if char != 'S' and char != 's' and char != 'P' and char != 'E' and char != 'R':
 			#	ierror()
@@ -164,23 +173,50 @@ def processfile():
 					startadd = address + module_address
 				continue
 			
-			print char.encode('hex')
-			'''
+			if char == 'P':
+				if P_tablex >= P_TABLE_SIZE:
+					print("Error: P table overflow")
+					sys.exit()
+				P = PTYPE()
+				P.address = module_address + address
+				P_table[P_tablex] = P
+			elif char == 'E':
+				if E_tablex >= E_TABLE_SIZE:
+					print("ERROR: E table overflow\n")
+					sys.exit()
+				E = ETYPE()
+				E.address = module_address + address
+				E_table[E_tablex] = E
+			elif char == 'R':
+				if R_tablex >= R_TABLE_SIZE:
+					print("ERROR: R table overflow\n")
+					sys.exit()
+				R = RTYPE()
+				R.module_address = module_address
+				R.address = module_address + address
+				R_tablex += 1
+				continue
+		
+			if char == 'P':
+				for i in range(0, P_tablex):
+					if(char == P_table[i].symptr):
+						print("ERROR: Duplicate PUBLIC symbol " + char)
+						sys.exit()
+					P_table[P_tablex].symptr = char
+					P_tablex += 1
+			elif char == 'E':
+				E_table[E_tablex].symptr = char
+				E_tablex += 1
+			#else:
+				#print char
+			continue
+			#print char.encode('hex').decode('hex')
+			
 			if char == 'P' or char == 'E' or char == 'R' or char == 'T':
 				print char
 			else:
 				print char.encode('hex')
-			'''
 			
-	#guaranteed to read by byte
-	with open('testb.mob',"rb") as f:
-		block = f.read(1024)
-		str = ""
-		print "block" + block
-		for ch in block:
-			str += hex(ord(ch)).lstrip("0x").zfill(2) + " "
-		print str
-		
 		
 def doifile():
 	global ifilename, out_stream, ofopen, in_stream, ofilename
@@ -233,6 +269,7 @@ def main():
 	
 	in_stream = open('testb.mob', 'rb')
 	processfile()
+	
 	'''
 	for argx in range (1, len(sys.argv)):
 		ifilename = sys.argv[argx]
