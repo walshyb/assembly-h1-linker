@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-import sys
+import sys, os
 import platform
 import string
 
@@ -21,16 +21,16 @@ FILE_BUF_SIZE = 12000
 #------------------------------
 
 class PTYPE:
-	address = ''
-	symptr = ''
+	address = 0
+	symptr = 0
 
 class ETYPE:
-	address = ''
-	symptr = ''
+	address = 0
+	symptr = 0
 	
 class RTYPE:
-	address = ''
-	module_address = ''
+	address = 0
+	module_address = 0
 	
 #------------------------------
 
@@ -135,6 +135,9 @@ def processfile():
 				E_table[E_tablex].symptr = firstchar
 		return
 '''
+
+
+'''
 def processfile():
 	global in_stream, startadd, gots, module_address, P_table, E_table, R_table, P_tablex, E_tablex, R_tablex
 	
@@ -216,7 +219,71 @@ def processfile():
 				print char
 			else:
 				print char.encode('hex')
+'''
+
+def processfile():
+	global in_stream, startadd, gots, module_address, P_table, E_table, R_table, P_tablex, E_tablex, R_tablex
+	
+	address = 0
+	#endptr = os.stat(ifilename).st_size
+
+	
+	with in_stream as file:
+
+		fptr = file.read(1)	#fptr = file_buffer;
+		file.seek(-1,1) #move file's position back 1
+		#might be able to rid of above 2 lines and switch 'firstchar = fptr' with 'fptr = file.read(1)'
+ 		while True:
 			
+ 			firstchar = fptr 
+ 			fptr = file.read(1) #firstchar = *fptr++;
+
+			if firstchar == 'T':
+				textsize = endptr - fptr
+				#add more
+
+			if firstchar != 'S' and firstchar != 's' and firstchar != 'P' and firstchar != 'E' and firstchar != 'R':
+				ierror()
+			else:
+				fptr = file.read(3)
+
+				if firstchar == 'P':
+					if P_tablex >= P_TABLE_SIZE:
+						print("ERROR: P table overflow")
+						sys.exit();
+					P_table[P_tablex].address = module_address + address
+				else:
+					if firstchar == 'E':
+						if E_tablex >= E_TABLE_SIZE:
+							print("ERROR: E table overflow")
+							sys.exit();
+	         
+						E_table[E_tablex].address = module_address + address
+					else:
+						if firstchar == 'R':
+							if R_tablex >= R_TABLE_SIZE:
+								print("ERROR: R table overflow")
+								sys.exit();
+	         
+							R_table[R_tablex].module_address = module_address
+							R_table[R_tablex].address = module_address + address
+							R_tablex += 1
+							continue
+
+				if firstchar == 'P':
+					for j in range (0, P_tablex):
+						if firstchar == P_table[j].symptr:
+							print("ERROR: Duplicate PUBLIC symbol" + firstchar)
+							sys.exit()
+					P_table[P_tablex].symptr = fptr
+					P_tablex += 1
+				else:
+					E_table[E_tablex].symptr = firstchar
+
+				fptr = file.read(2)
+				continue
+
+			break
 		
 def doifile():
 	global ifilename, out_stream, ofopen, in_stream, ofilename
@@ -267,7 +334,7 @@ def main():
 		sys.exit()
 		
 	
-	in_stream = open('testb.mob', 'rb')
+	in_stream = open('testa.mob', 'rb')
 	processfile()
 	
 	'''
