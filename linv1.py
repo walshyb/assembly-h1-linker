@@ -49,7 +49,7 @@ ifilename = ''
 ofilename = ''
 text_buffer = [0] * (MACSIZE+1)
 #text_buffer = ''
-file_buffer = '' * FILE_BUF_SIZE
+file_buffer = []
 file = None
 in_stream = None
 out_stream = None
@@ -57,32 +57,50 @@ out_stream = None
 def ierror():
 	print("Input file " + str(ifilename) + " is not linkable\n")
 	sys.exit()
-'''	
+
 def processfile():
-	global in_stream, module_address, P_table, E_table, R_table, P_tablex, E_tablex, R_tablex
+	global startadd, gots, module_address, P_table, E_table, R_table, P_tablex, E_tablex, R_tablex
+	i = 0
 	address = 0
-	i = 1
+	endptr = file_buffer[len(file_buffer)-1]
+	fptr = file_buffer[i]
+	
+	print file_buffer
+
 	while True:
-		firstchar = in_stream.read(i)
-		i = i +1
-		print "here" + firstchar
-		
+		firstchar = fptr
+		i += 1
+		fptr = file_buffer[i]
+
 		if firstchar == 'T':
-			textsize = len(file.read())
+			textsize = len(file_buffer) - i
+
 			if textsize/2 > MACSIZE - module_address:
 				print("ERROR: Linked program too big")
 				sys.exit()
+			module_address_Save = module_address
+			i_Save = i
 			
-			text_buffer[module_address] = textsize
+			for j in range(i, len(file_buffer)):
+				if file_buffer[i].encode('hex') != '\x00':
+					text_buffer[module_address] = file_buffer[i]
+				i += 1
+				module_address += 1
+
+			module_address = module_address_Save
+			i = i_Save
 			
 			module_address += textsize/2
+
 			break
-	
+		
 		if firstchar != 'S' and firstchar != 's' and firstchar != 'P' and firstchar != 'E' and firstchar != 'R':
 			ierror()
 		else:
-			address = 1
-			
+			address = int(fptr.encode('hex'), 16)
+			i += 2
+			fptr = file_buffer[i]
+
 			if firstchar == 'S' or firstchar == 's':
 				if gots:
 					print("ERROR: More than one starting add")
@@ -96,101 +114,21 @@ def processfile():
 				else:
 					startadd = address + module_address
 				continue
-	
 			if firstchar == 'P':
-				if P_tablex >= P_TABLE_SIZE:
-					print("ERROR: P table overflow")
-					sys.exit();
-	         
-				P_table[P_tablex].address = module_address + address
-				print module_address
-				print address
-			else:
-				if firstchar == 'E':
-					if E_tablex >= E_TABLE_SIZE:
-						print("ERROR: E table overflow")
-						sys.exit();
-	         
-					E_table[E_tablex].address = module_address + address
-				else:
-					if firstchar == 'R':
-						if R_tablex >= R_TABLE_SIZE:
-							print("ERROR: R table overflow")
-							sys.exit();
-	         
-						R_table[R_tablex].module_address = module_address
-						R_table[R_tablex].address = module_address + address
-						R_tablex += 1
-						continue
-	
-			if firstchar == 'P':
-				print "in last P check"
-				for j in range (0, P_tablex):
-					if firstchar == P_table[j].symptr:
-						print("ERROR: Duplicate PUBLIC symbol" + firstchar)
-						sys.exit()
-				P_table[P_tablex].symptr = firstchar
-				P_tablex += 1
-			else:
-				E_table[E_tablex].symptr = firstchar
-		return
-'''
-
-
-'''
-def processfile():
-	global in_stream, startadd, gots, module_address, P_table, E_table, R_table, P_tablex, E_tablex, R_tablex
-	
-	address = 0
-	
-	with in_stream as file:
- 		while True:
-			char = file.read(1)
-			#check if char (word) is P,E,R, or T
-			#check if word is 2bit hex 
-			if not char:
-				print "End of file"
-				break
-			
-			#if char == 'T':
-				#print ''
-			
-			if char in string.printable: #if char is word/symbol or hex data
-				print char
-			else: 
-				print char.encode('hex')
-				#do stuff
-			#if char != 'S' and char != 's' and char != 'P' and char != 'E' and char != 'R':
-			#	ierror()
-			#else:
-			if char == 'S' or char == 's':
-				if gots:
-					print("ERROR: More than one starting add\n")
-					sys.exit()
-				gots = True
-				saves = char
-				
-				if char == 'S':
-					startadd = address
-				else:
-					startadd = address + module_address
-				continue
-			
-			if char == 'P':
 				if P_tablex >= P_TABLE_SIZE:
 					print("Error: P table overflow")
 					sys.exit()
 				P = PTYPE()
 				P.address = module_address + address
 				P_table[P_tablex] = P
-			elif char == 'E':
+			elif firstchar == 'E':
 				if E_tablex >= E_TABLE_SIZE:
 					print("ERROR: E table overflow\n")
 					sys.exit()
 				E = ETYPE()
 				E.address = module_address + address
 				E_table[E_tablex] = E
-			elif char == 'R':
+			elif firstchar == 'R':
 				if R_tablex >= R_TABLE_SIZE:
 					print("ERROR: R table overflow\n")
 					sys.exit()
@@ -199,104 +137,47 @@ def processfile():
 				R.address = module_address + address
 				R_tablex += 1
 				continue
-		
-			if char == 'P':
-				for i in range(0, P_tablex):
-					if(char == P_table[i].symptr):
-						print("ERROR: Duplicate PUBLIC symbol " + char)
+
+			if firstchar == 'P':
+				for j in range(0, P_tablex):
+					if(firstchar == P_table[j].symptr):
+						print("ERROR: Duplicate PUBLIC symbol " + firstchar)
 						sys.exit()
-					P_table[P_tablex].symptr = char
-					P_tablex += 1
-			elif char == 'E':
-				E_table[E_tablex].symptr = char
+				
+				P_table[P_tablex].symptr = fptr
+				P_tablex += 1
+			elif firstchar == 'E':
+				E_table[E_tablex].symptr = fptr
 				E_tablex += 1
-			#else:
-				#print char
+
+			i += 2
+			fptr = file_buffer[i]
 			continue
-			#print char.encode('hex').decode('hex')
-			
-			if char == 'P' or char == 'E' or char == 'R' or char == 'T':
-				print char
-			else:
-				print char.encode('hex')
-'''
 
-def processfile():
-	global in_stream, startadd, gots, module_address, P_table, E_table, R_table, P_tablex, E_tablex, R_tablex
+	#print P_table[0].address
+	#print P_table[0].symptr
 	
-	address = 0
-	#endptr = os.stat(ifilename).st_size
+	#print E_table[0].address
+	#print E_table[0].symptr
 
-	
-	with in_stream as file:
-
-		fptr = file.read(1)	#fptr = file_buffer;
-		file.seek(-1,1) #move file's position back 1
-		#might be able to rid of above 2 lines and switch 'firstchar = fptr' with 'fptr = file.read(1)'
- 		while True:
-			
- 			firstchar = fptr 
- 			fptr = file.read(1) #firstchar = *fptr++;
-
-			if firstchar == 'T':
-				textsize = endptr - fptr
-				#add more
-
-			if firstchar != 'S' and firstchar != 's' and firstchar != 'P' and firstchar != 'E' and firstchar != 'R':
-				ierror()
-			else:
-				fptr = file.read(3)
-
-				if firstchar == 'P':
-					if P_tablex >= P_TABLE_SIZE:
-						print("ERROR: P table overflow")
-						sys.exit();
-					P_table[P_tablex].address = module_address + address
-				else:
-					if firstchar == 'E':
-						if E_tablex >= E_TABLE_SIZE:
-							print("ERROR: E table overflow")
-							sys.exit();
-	         
-						E_table[E_tablex].address = module_address + address
-					else:
-						if firstchar == 'R':
-							if R_tablex >= R_TABLE_SIZE:
-								print("ERROR: R table overflow")
-								sys.exit();
-	         
-							R_table[R_tablex].module_address = module_address
-							R_table[R_tablex].address = module_address + address
-							R_tablex += 1
-							continue
-
-				if firstchar == 'P':
-					for j in range (0, P_tablex):
-						if firstchar == P_table[j].symptr:
-							print("ERROR: Duplicate PUBLIC symbol" + firstchar)
-							sys.exit()
-					P_table[P_tablex].symptr = fptr
-					P_tablex += 1
-				else:
-					E_table[E_tablex].symptr = firstchar
-
-				fptr = file.read(2)
-				continue
-
-			break
-		
 def doifile():
-	global ifilename, out_stream, ofopen, in_stream, ofilename
+	global ifilename, out_stream, ofopen, file_buffer, ofilename
 	
 	if not(ifilename.endswith('.mob')):
 		ifilename = ifilename + '.mob'
 	
+	file_buffer = []
 	
-	if platform.system() == 'Windows':
-		in_stream = open(ifilename, 'rb')
-	else:
-		in_stream = open(ifilename, 'r')
-		
+	in_stream = open(ifilename, 'rb')
+	with in_stream as file:
+		byte = file.read(1)
+		while byte != '':
+			#if byte != 'P' and byte != 'E' and byte != 'R' and byte != 'S' and byte != 'T':
+			file_buffer.append(byte)
+			byte = file.read(1)
+
+	in_stream.close()
+	
 	if not(in_stream):
 		print("ERROR: Cannot open input file" + ifilename)
 		sys.exit()
@@ -316,11 +197,6 @@ def doifile():
 			print("ERROR: Cannot open output file" + ofilename)
 			sys.exit()
 	
-
-	#if filesize == FILE_BUF_SIZE:
-		#print("Input file" + ifilename + "is too big")
-		#sys.exit()
-
 	processfile()
 
 def main():
@@ -334,9 +210,13 @@ def main():
 		sys.exit()
 		
 	
-	in_stream = open('testa.mob', 'rb')
-	processfile()
+	#ifilename = 'testb.mob'
+	#oifile()
+	for argx in range (1, len(sys.argv)):
+		ifilename = sys.argv[argx]
+		doifile()
 	
+
 	'''
 	for argx in range (1, len(sys.argv)):
 		ifilename = sys.argv[argx]
