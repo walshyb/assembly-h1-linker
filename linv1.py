@@ -1,17 +1,7 @@
 #!/usr/bin/env python
 
-import sys, os
-import platform
-import string
+import sys
 
-if platform.system() == 'Windows':
-	fdiv = "\\"
-else:
-	fdiv = "/"
-
-#------------------------------
-
-BUF_SIZE = 121
 MACSIZE = 4096
 P_TABLE_SIZE = 5
 E_TABLE_SIZE = 5
@@ -38,13 +28,12 @@ P_table = [PTYPE()] * P_TABLE_SIZE
 E_table = [ETYPE()] * E_TABLE_SIZE
 R_table = [RTYPE()] * R_TABLE_SIZE
 
-P_tablex = R_tablex = E_tablex = ssize = filesize = textsize = E_tablexstart = R_tablexstart = ofopen = startadd = module_address = text_buffer_size = 0
+P_tablex = R_tablex = E_tablex = filesize = textsize = E_tablexstart = R_tablexstart = ofopen = startadd = module_address = text_buffer_size = 0
 gots = False
 saves = ''
 ifilename = ''
 ofilename = ''
 text_buffer = [0] * (MACSIZE+1)
-#text_buffer = ''
 file_buffer = []
 file = None
 in_stream = None
@@ -61,8 +50,6 @@ def processfile():
 	endptr = file_buffer[len(file_buffer)-1]
 	fptr = file_buffer[i]
 	
-	print file_buffer
-
 	while True:
 		firstchar = fptr
 		i += 1
@@ -193,7 +180,7 @@ def doifile():
 def main():
 	global ifilename, out_stream, in_stream, E_tablexstart,R_tablexstart,P_tablexstart, text_buffer_size, module_address, R_table
 	j = 0
-	print("Brandon Walsh")
+	print("Author: Brandon Walsh")
 	
 	if len(sys.argv) < 3:
 		print("ERROR: Incorrect number of command line args")
@@ -219,8 +206,6 @@ def main():
 		print("ERROR: Unresolved external symbol " + E_table[E_tablexstart].symptr)
 		sys.exit()
 	'''
-	
-	
 	for R_tablexstart in range (R_tablexstart, R_tablex):
 		text_buffer[R_table[R_tablexstart].address] = text_buffer[R_table[R_tablexstart].address] & 0xf000 | (text_buffer[R_table[R_tablexstart].address] + R_table[R_tablexstart].module_address) & 0x0fff
 
@@ -256,7 +241,6 @@ def main():
 			out_stream.write(chr(text_buffer[k]))
 		
 	out_stream.close()
-
-	print("here")
+	print "Output file: " + ofilename
 	
 main()
