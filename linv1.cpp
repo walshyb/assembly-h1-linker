@@ -243,9 +243,7 @@
         j = 0;
  
      // search for matching public
-     while (j < P_tablex && 
-            strcmp(P_table[j].symptr,
-            E_table[E_tablexstart].symptr))
+     while (j < P_tablex && strcmp(P_table[j].symptr,E_table[E_tablexstart].symptr))
         j++;
  
         // found it--now resolve external ref
