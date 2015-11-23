@@ -92,7 +92,6 @@ def processfile():
 
 			module_address = module_address_Save
 			i = i_Save
-
 			module_address += textsize/2
 
 			break
@@ -205,7 +204,8 @@ def main():
 	for argx in range (1, len(sys.argv)):
 		ifilename = sys.argv[argx]
 		doifile()
-	
+		
+	'''
 	for E_tablexstart in range (E_tablexstart, E_tablex):
 		j = 0
 		
@@ -216,7 +216,7 @@ def main():
 				text_buffer[E_table[E_tablexstart].address] = text_buffer[E_table[E_tablexstart].address] & 0xf000 | (text_buffer[E_table[E_tablexstart].address] + P_table[j].address ) & 0x0fff
 			else:
 				break
-	
+	'''
 	
 	'''
 	if E_tablexstart != E_tablex:
@@ -224,10 +224,9 @@ def main():
 		sys.exit()
 	'''
 	
-	
+
 	for R_tablexstart in range (R_tablexstart, R_tablex):
 		text_buffer[R_table[R_tablexstart].address] = text_buffer[R_table[R_tablexstart].address] & 0xf000 | (text_buffer[R_table[R_tablexstart].address] + R_table[R_tablexstart].module_address) & 0x0fff
-	
 	
 	for i in range (0, P_tablex):
 		out_stream.write("P")
@@ -247,10 +246,12 @@ def main():
 		out_stream.write(startadd)
 
 	out_stream.write("T")
-
+	
 	for k in range(0, text_buffer_size):
 	#for k in range(0, module_address * 2): #this might work
-		out_stream.write(chr(int(str(text_buffer[k]), 16)))
+		print str(text_buffer[k])
+		out_stream.write(chr(text_buffer[k]))
+		
 	
 	out_stream.close()
 
