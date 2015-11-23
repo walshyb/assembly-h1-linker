@@ -42,7 +42,7 @@ R_table = [RTYPE()] * R_TABLE_SIZE
 #E_table = []
 #R_table = []
 
-P_tablex = R_tablex = E_tablex = ssize = filesize = textsize = E_tablexstart = R_tablexstart = ofopen = startadd = module_address = 0
+P_tablex = R_tablex = E_tablex = ssize = filesize = textsize = E_tablexstart = R_tablexstart = ofopen = startadd = module_address = text_buffer_size = 0
 gots = False
 saves = ''
 ifilename = ''
@@ -59,7 +59,7 @@ def ierror():
 	sys.exit()
 
 def processfile():
-	global startadd, gots, module_address, P_table, E_table, R_table, P_tablex, E_tablex, R_tablex
+	global startadd, gots, module_address, P_table, E_table, R_table, P_tablex, E_tablex, R_tablex, text_buffer_size
 	i = 0
 	address = 0
 	endptr = file_buffer[len(file_buffer)-1]
@@ -80,15 +80,19 @@ def processfile():
 				sys.exit()
 			module_address_Save = module_address
 			i_Save = i
-			
+
 			for j in range(i, len(file_buffer)):
-				if file_buffer[i].encode('hex') != '\x00':
-					text_buffer[module_address] = file_buffer[i]
+				file_buffer[i] = hex(ord(file_buffer[i])).lstrip("\\x")
+				file_buffer[i] = int(file_buffer[i], 16)
+				
+				text_buffer[module_address] = file_buffer[i]
 				i += 1
 				module_address += 1
+				text_buffer_size += 1
 
 			module_address = module_address_Save
 			i = i_Save
+			print text_buffer
 			
 			module_address += textsize/2
 
@@ -154,12 +158,6 @@ def processfile():
 			fptr = file_buffer[i]
 			continue
 
-	#print P_table[0].address
-	#print P_table[0].symptr
-	
-	#print E_table[0].address
-	#print E_table[0].symptr
-
 def doifile():
 	global ifilename, out_stream, ofopen, file_buffer, ofilename
 	
@@ -188,10 +186,7 @@ def doifile():
 		ofilename = ofilename.rsplit( ".", 1 )[ 0 ]	#rid of ./mob
 		ofilename = ofilename + '.mac' #add .mac
 	
-		if platform.system() == 'Windows':
-			out_stream = open(ofilename, "wb")
-		else:
-			out_stream = open(ofilename, "w")
+		out_stream = open(ofilename, "wb")
 			
 		if not(out_stream):
 			print("ERROR: Cannot open output file" + ofilename)
@@ -200,7 +195,7 @@ def doifile():
 	processfile()
 
 def main():
-	global ifilename, out_stream, in_stream, E_tablexstart,R_tablexstart,P_tablexstart
+	global ifilename, out_stream, in_stream, E_tablexstart,R_tablexstart,P_tablexstart, text_buffer_size
 	j = 0
 	print("Brandon Walsh")
 	
@@ -209,60 +204,53 @@ def main():
 		print("ERROR: Incorrect number of command line args")
 		sys.exit()
 		
-	
-	#ifilename = 'testb.mob'
-	#oifile()
 	for argx in range (1, len(sys.argv)):
 		ifilename = sys.argv[argx]
 		doifile()
-	
 
-	'''
-	for argx in range (1, len(sys.argv)):
-		ifilename = sys.argv[argx]
-		doifile()
-	
 	for E_tablexstart in range (E_tablexstart, E_tablex):
 		j = 0
-	
-	while j < P_tablex and P_table[j].symptr != E_table[E_tablexstart].symptr:
-		j += 1
 		
-		if j < P_tablex:
-			text_buffer[E_table[E_tablexstart].address] = text_buffer[E_table[E_tablexstart].address] & 0xf000 | (text_buffer[E_table[E_tablexstart].address] + P_table[j].address ) & 0x0fff
-		else:
-			break
-	
+		while j < P_tablex and P_table[j].symptr != E_table[E_tablexstart].symptr:
+			j += 1
+			
+			if j < P_tablex:
+				text_buffer[E_table[E_tablexstart].address] = text_buffer[E_table[E_tablexstart].address] & 0xf000 | (text_buffer[E_table[E_tablexstart].address] + P_table[j].address ) & 0x0fff
+			else:
+				break
+	'''
 	if E_tablexstart != E_tablex:
 		print("ERROR: Unresolved external symbol " + E_table[E_tablexstart].symptr)
 		sys.exit()
+	'''
 		
-	#for R_tablexstart in range (R_tablexstart, R_tablex):
-		#text_buffer[R_table[R_tablexstart].address] = text_buffer[R_table[R_tablexstart].address] & 0xf000 | (text_buffer[R_table[R_tablexstart].address] + R_table[R_tablexstart].module_address) & 0x0fff
-		
+	for R_tablexstart in range (R_tablexstart, R_tablex):
+		text_buffer[R_table[R_tablexstart].address] = text_buffer[R_table[R_tablexstart].address] & 0xf000 | (text_buffer[R_table[R_tablexstart].address] + R_table[R_tablexstart].module_address) & 0x0fff
+	
 	for i in range (0, P_tablex):
-		out_stream.write("P")
-		out_stream.write(str(P_table[i].address))
-		out_stream.write(P_table[i].symptr)
+		out_stream.write("P".encode('hex'))
+		out_stream.write(str(P_table[i].address).encode('hex'))
+		out_stream.write(P_table[i].symptr.encode('hex'))
 	
 	for i in range (0, R_tablex):
-		out_stream.write("R")
-		out_stream.write(str(R_table[i].address))
+		out_stream.write("R".encode('hex'))
+		out_stream.write(str(R_table[i].address).encode('hex'))
 	
 	for i in range(0, E_tablex):
-		out_stream.write("R")
-		out_stream.write(E_table[i].address)
+		out_stream.write("E".encode('hex'))
+		out_stream.write(str(E_table[i].address).encode('hex'))
 	
 	if gots:
 		out_stream.write(saves)
 		out_stream.write(startadd)
 
-	out_stream.write("T")
+	out_stream.write("T".encode('hex'))
 	
-	out_stream.write(str(text_buffer))
+	for k in range(0, text_buffer_size):
+		out_stream.write(str(text_buffer[k]).encode('hex'))
 	
 	out_stream.close()
 
 	print("here")
-	'''
+	
 main()
