@@ -38,10 +38,6 @@ P_table = [PTYPE()] * P_TABLE_SIZE
 E_table = [ETYPE()] * E_TABLE_SIZE
 R_table = [RTYPE()] * R_TABLE_SIZE
 
-#P_table = []
-#E_table = []
-#R_table = []
-
 P_tablex = R_tablex = E_tablex = ssize = filesize = textsize = E_tablexstart = R_tablexstart = ofopen = startadd = module_address = text_buffer_size = 0
 gots = False
 saves = ''
@@ -85,10 +81,13 @@ def processfile():
 				file_buffer[i] = hex(ord(file_buffer[i])).lstrip("\\x")
 				file_buffer[i] = int(file_buffer[i], 16)
 				
-				text_buffer[module_address] = file_buffer[i]
-				i += 1
-				module_address += 1
-				text_buffer_size += 1
+				if file_buffer[i] == 0:
+					i+=1
+				else:
+					text_buffer[module_address] = file_buffer[i]
+					i += 1
+					module_address += 1
+					text_buffer_size += 1
 
 			module_address = module_address_Save
 			i = i_Save
@@ -137,6 +136,7 @@ def processfile():
 				R = RTYPE()
 				R.module_address = module_address
 				R.address = module_address + address
+				R_table[R_tablex] = R
 				R_tablex += 1
 				continue
 
@@ -155,7 +155,6 @@ def processfile():
 			i += 2
 			fptr = file_buffer[i]
 			continue
-
 def doifile():
 	global ifilename, out_stream, ofopen, file_buffer, ofilename
 	
@@ -168,7 +167,6 @@ def doifile():
 	with in_stream as file:
 		byte = file.read(1)
 		while byte != '':
-			#if byte != 'P' and byte != 'E' and byte != 'R' and byte != 'S' and byte != 'T':
 			file_buffer.append(byte)
 			byte = file.read(1)
 
@@ -193,7 +191,7 @@ def doifile():
 	processfile()
 
 def main():
-	global ifilename, out_stream, in_stream, E_tablexstart,R_tablexstart,P_tablexstart, text_buffer_size, module_address
+	global ifilename, out_stream, in_stream, E_tablexstart,R_tablexstart,P_tablexstart, text_buffer_size, module_address, R_table
 	j = 0
 	print("Brandon Walsh")
 	
@@ -205,7 +203,6 @@ def main():
 		ifilename = sys.argv[argx]
 		doifile()
 		
-	'''
 	for E_tablexstart in range (E_tablexstart, E_tablex):
 		j = 0
 		
@@ -216,7 +213,6 @@ def main():
 				text_buffer[E_table[E_tablexstart].address] = text_buffer[E_table[E_tablexstart].address] & 0xf000 | (text_buffer[E_table[E_tablexstart].address] + P_table[j].address ) & 0x0fff
 			else:
 				break
-	'''
 	
 	'''
 	if E_tablexstart != E_tablex:
@@ -224,35 +220,41 @@ def main():
 		sys.exit()
 	'''
 	
-
+	
 	for R_tablexstart in range (R_tablexstart, R_tablex):
 		text_buffer[R_table[R_tablexstart].address] = text_buffer[R_table[R_tablexstart].address] & 0xf000 | (text_buffer[R_table[R_tablexstart].address] + R_table[R_tablexstart].module_address) & 0x0fff
-	
+
 	for i in range (0, P_tablex):
 		out_stream.write("P")
 		out_stream.write(chr(int(str(P_table[i].address), 16)))
+		out_stream.write(chr(00))
 		out_stream.write(P_table[i].symptr)
-	
+		out_stream.write(chr(00))
+		
 	for i in range (0, R_tablex):
 		out_stream.write("R")
 		out_stream.write(chr(int(str(R_table[i].address), 16)))
-	
+		out_stream.write(chr(00))
+
 	for i in range(0, E_tablex):
 		out_stream.write("R")
 		out_stream.write(chr(int(str(E_table[i].address), 16)))
-	
+		out_stream.write(chr(00))
+
 	if gots:
 		out_stream.write(saves)
 		out_stream.write(startadd)
 
 	out_stream.write("T")
 	
-	for k in range(0, text_buffer_size):
+	for k in range(0, text_buffer_size+8):
 	#for k in range(0, module_address * 2): #this might work
-		print str(text_buffer[k])
-		out_stream.write(chr(text_buffer[k]))
+		if text_buffer[k] != 255:
+			out_stream.write(chr(text_buffer[k]))
+			out_stream.write(chr(00))
+		else:
+			out_stream.write(chr(text_buffer[k]))
 		
-	
 	out_stream.close()
 
 	print("here")
