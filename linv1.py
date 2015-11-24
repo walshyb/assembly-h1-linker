@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-import sys
+import sys, struct
 
 MACSIZE = 4096
 P_TABLE_SIZE = 5
@@ -210,12 +210,14 @@ def main():
 		text_buffer[R_table[R_tablexstart].address] = text_buffer[R_table[R_tablexstart].address] & 0xf000 | (text_buffer[R_table[R_tablexstart].address] + R_table[R_tablexstart].module_address) & 0x0fff
 
 	for i in range (0, P_tablex):
-		out_stream.write("P")
+		out_stream.write('P')
 		out_stream.write(chr(int(str(P_table[i].address), 16)))
 		out_stream.write(chr(00))
 		out_stream.write(P_table[i].symptr)
 		out_stream.write(chr(00))
 		
+		#print hex(0x0000 | int(hex(ord("P")), 16))
+
 	for i in range (0, R_tablex):
 		out_stream.write("R")
 		out_stream.write(chr(int(str(R_table[i].address), 16)))
@@ -234,11 +236,14 @@ def main():
 	
 	for k in range(0, text_buffer_size+8):
 	#for k in range(0, module_address * 2): #this might work
-		if text_buffer[k] != 255:
+		if text_buffer[k] >= 255:
 			out_stream.write(chr(text_buffer[k]))
 			out_stream.write(chr(00))
 		else:
 			out_stream.write(chr(text_buffer[k]))
+		
+		#print text_buffer[k]
+		#print format(text_buffer[k], '02x')
 		
 	out_stream.close()
 	print "Output file: " + ofilename
