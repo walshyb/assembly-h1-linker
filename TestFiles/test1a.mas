@@ -1,0 +1,4 @@
+ld x
+dout
+halt
+extern x
