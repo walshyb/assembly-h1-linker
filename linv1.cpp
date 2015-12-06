@@ -248,11 +248,7 @@
  
         // found it--now resolve external ref
         if (j < P_tablex) {
-           text_buffer[E_table[E_tablexstart].address] =
-           text_buffer[E_table[E_tablexstart].address] & 0xf000
-                               |
-           (text_buffer[E_table[E_tablexstart].address] +
-                		P_table[j].address ) & 0x0fff;
+           text_buffer[E_table[E_tablexstart].address] = text_buffer[E_table[E_tablexstart].address] & 0xf000 | (text_buffer[E_table[E_tablexstart].address] + P_table[j].address ) & 0x0fff;
  
         }
         else
@@ -268,13 +264,7 @@
      // relocate relocatable symbols
      for (; R_tablexstart < R_tablex; R_tablexstart ++ ) {
  
-         text_buffer[R_table[R_tablexstart].address] = 
- 
-         text_buffer[R_table[R_tablexstart].address] & 0xf000
-                   |
-         (text_buffer[R_table[R_tablexstart].address]
-                   +
-          R_table[R_tablexstart].module_address) & 0x0fff;
+         text_buffer[R_table[R_tablexstart].address] =  text_buffer[R_table[R_tablexstart].address] & 0xf000 | (text_buffer[R_table[R_tablexstart].address] + R_table[R_tablexstart].module_address) & 0x0fff;
      }
  
      // output header

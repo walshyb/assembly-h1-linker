@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-import sys, struct
+import sys, struct, binascii
 
 MACSIZE = 4096
 P_TABLE_SIZE = 5
@@ -36,12 +36,11 @@ ifilename = ''
 ofilename = ''
 text_buffer = [0] * (MACSIZE+1)
 file_buffer = []
-file = None
 in_stream = None
 out_stream = None
 
 def ierror():
-	print("Input file " + str(ifilename) + " is not linkable\n")
+	print("ERROR: Input file " + str(ifilename) + " is not linkable\n")
 	sys.exit()
 
 def processfile():
@@ -59,69 +58,55 @@ def processfile():
 
 		if firstchar == 'T':
 			textsize = len(file_buffer) - i
+			text_buffer_size += textsize
 
 			if textsize/2 > MACSIZE - module_address:
 				print("ERROR: Linked program too big")
 				sys.exit()
-			module_address_Save = module_address
-			i_Save = i
 
-			for i in range(i, len(file_buffer)):
-				file_buffer[i] = hex(ord(file_buffer[i])).lstrip("\\x")
-				file_buffer[i] = int(file_buffer[i], 16)
+			iSave = i
 
-				if file_buffer[i] == 0:
-					try:
-						next = file_buffer[i+1]
-						next = hex(ord(next)).lstrip("\\x")
-						next = int(next, 16)
-
-						if next == 0:
-							
-							text_buffer[text_buff_index] = file_buffer[i]
-							text_buff_index += 1
-							text_buffer_size += 1
-							module_address_Save += 1
-							
-							#or
-							#pass
-						else:
-							#or
-							pass
-
-					except IndexError:
-						pass
-				else:
-					text_buffer[text_buff_index] = file_buffer[i]
-
-					text_buff_index += 1
-
-					text_buffer_size += 1
-					module_address_Save += 1
-				'''
-				if file_buffer[i] < 10 and file_buffer[i] > 0:
-					text_buffer[text_buff_index] = 0
-					text_buffer_size += 1
-					text_buff_index+=1
-				'''
-			#module_address = (textsize/2) + i_Save #might not be necessary
-			i = i_Save
+			for k in range (0, textsize, 2):
+				text_buffer[module_address] = file_buffer[i+1].encode('hex') + file_buffer[i].encode('hex')
+				text_buffer[module_address] = int(text_buffer[module_address], 16)
+				i = i + 2
+				#print text_buffer[module_address]
+				module_address += 1
 
 			#module_address = module_address_Save
 			#module_address += textsize/2 #might not be necessary
+			module_address -= 1
 			module_address += textsize/2
+			#print module_address
+			#print text_buffer
 			break
+
 
 		if firstchar != 'S' and firstchar != 's' and firstchar != 'P' and firstchar != 'E' and firstchar != 'R':
 			ierror()
 		else:
-			address = int(fptr.encode('hex'), 16)
+
+			#get 2 bytes of hex data (current file_buffer location and next)
+			address = file_buffer[i+1].encode('hex') + fptr.encode('hex')
+			#print address
+
+			#convert hex data to int
+			address = int(address, 16)
+
+			#print address
+
+
+			#print hex(address)
+
 			i += 2
 			fptr = file_buffer[i]
 
+			if i > len(file_buffer)-1:
+				ierror()
+
 			if firstchar == 'S' or firstchar == 's':
 				if gots:
-					print("ERROR: More than one starting add")
+					print("ERROR: More than one starting address")
 					sys.exit()
 
 				gots = True
@@ -159,8 +144,8 @@ def processfile():
 
 			if firstchar == 'P':
 				for j in range(0, P_tablex):
-					if(firstchar == P_table[j].symptr):
-						print("ERROR: Duplicate PUBLIC symbol " + firstchar)
+					if(fptr == P_table[j].symptr):
+						print("ERROR: Duplicate PUBLIC symbol " + fptr)
 						sys.exit()
 
 				P_table[P_tablex].symptr = fptr
@@ -180,7 +165,12 @@ def doifile():
 
 	file_buffer = []
 
-	in_stream = open(ifilename, 'rb')
+	try:
+		in_stream = open(ifilename, 'rb')
+	except:
+		print("ERROR: Cannot open input file " + ifilename)
+		sys.exit()
+
 	with in_stream as file:
 		byte = file.read(1)
 		while byte != '':
@@ -188,10 +178,6 @@ def doifile():
 			byte = file.read(1)
 
 	in_stream.close()
-
-	if not(in_stream):
-		print("ERROR: Cannot open input file" + ifilename)
-		sys.exit()
 
 	if not(ofopen):
 		ofopen = 1
@@ -212,8 +198,8 @@ def main():
 	j = 0
 	print("Author: Brandon Walsh")
 
-	if len(sys.argv) < 3:
-		print("ERROR: Incorrect number of command line args")
+	if len(sys.argv) < 2:
+		print("ERROR: Incorrect number of command line arguments")
 		sys.exit()
 
 	for argx in range (1, len(sys.argv)):
@@ -222,34 +208,52 @@ def main():
 
 	#print "\nP_table Address: " + str(P_table[0].address)
 
+	#print text_buffer
+
 	for E_tablexstart in range (E_tablexstart, E_tablex):
 		j = 0
 
 		while j < P_tablex and P_table[j].symptr != E_table[E_tablexstart].symptr:
 			j += 1
 
-		#print P_table[0].address
-		text_buffer[E_table[E_tablexstart].address] = text_buffer[E_table[E_tablexstart].address] & 0xf000 | (text_buffer[E_table[E_tablexstart].address] + P_table[j].address ) & 0x0fff
 		#print text_buffer[E_table[E_tablexstart].address]
+		#print P_table[j].address
+		if j < P_tablex:
+			#print P_table[j].address
+			#print E_table[E_tablexstart].address
+			#print E_table[E_tablexstart].symptr
+			text_buffer[E_table[E_tablexstart].address] = text_buffer[E_table[E_tablexstart].address] & 0xf000 | (text_buffer[E_table[E_tablexstart].address] + P_table[j].address ) & 0x0fff
+		else:
+			break
+	#print text_buffer[E_table[E_tablexstart].address]
 
-	#print text_buffer[:8]
-	'''
+	#print text_buffer
+	
 	if E_tablexstart != E_tablex:
 		print("ERROR: Unresolved external symbol " + E_table[E_tablexstart].symptr)
 		sys.exit()
-	'''
+	
 
 	for R_tablexstart in range (R_tablexstart, R_tablex):
+		#print int(text_buffer[R_table[R_tablexstart].address], 16)
 		text_buffer[R_table[R_tablexstart].address] = text_buffer[R_table[R_tablexstart].address] & 0xf000 | (text_buffer[R_table[R_tablexstart].address] + R_table[R_tablexstart].module_address) & 0x0fff
 
-	print text_buffer[:8]
+	#print text_buffer
 
 	for i in range (0, P_tablex):
 		#print "P Address: " + str(P_table[i].address)
 		#print "P Symptr: " + P_table[i].symptr
 		out_stream.write('P')
-		out_stream.write(chr(int(str(P_table[i].address), 16)))
-		out_stream.write(chr(00))
+
+		temp = format(P_table[i].address, '04x')
+		temp = temp[2:] + temp[2:-2] + temp[:2]
+
+		#out_stream.write(format(P_table[i].address, '04x'))
+
+		out_stream.write(binascii.a2b_hex(temp))
+
+		#ssize = len(P_table[i].symptr) + 1
+
 		out_stream.write(P_table[i].symptr)
 		out_stream.write(chr(00))
 
@@ -259,15 +263,23 @@ def main():
 		#print "R Address: " + str(R_table[i].address)
 		#print "R Mod Address: " + R_table[i].module_address
 		out_stream.write("R")
-		out_stream.write(chr(int(str(R_table[i].address), 16)))
-		out_stream.write(chr(00))
+
+		temp = format(R_table[i].address, '04x')
+		temp = temp[2:] + temp[2:-2] + temp[:2]
+
+		out_stream.write(binascii.a2b_hex(temp))
+		#out_stream.write(chr(00))
 
 	for i in range(0, E_tablex):
 		#print "E Address: " + str(E_table[i].address)
 		#print "E Symptr: " + E_table[i].symptr
 		out_stream.write("R")
-		out_stream.write(chr(int(str(E_table[i].address), 16)))
-		out_stream.write(chr(00))
+
+		temp = format(P_table[i].address, '04x')
+		temp = temp[2:] + temp[2:-2] + temp[:2]
+
+		out_stream.write(binascii.a2b_hex(temp))
+		#out_stream.write(chr(00))
 
 	if gots:
 		out_stream.write(saves)
@@ -275,16 +287,16 @@ def main():
 
 	out_stream.write("T")
 
-	for k in range(0, text_buffer_size+8):
+	#print module_address
+	#print len(text_buffer)
+	for k in range(0, 2 * module_address):
 	#for k in range(0, module_address * 2): #this might work
 		#print text_buffer[k]
-		if text_buffer[k] >= 255:
-			out_stream.write(chr(text_buffer[k]))
-		elif text_buffer[k] >= 1 and text_buffer[k] < 10:
-			out_stream.write(chr(text_buffer[k]))
-			out_stream.write(chr(0))
-		else:
-			out_stream.write(chr(text_buffer[k]))
+
+		temp = format(text_buffer[k], '04x')
+		temp = temp[2:] + temp[2:-2] + temp[:2]
+
+		out_stream.write(binascii.a2b_hex(temp))
 
 		#print text_buffer[k]
 		#print text_buffer[k]
