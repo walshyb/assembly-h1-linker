@@ -258,7 +258,8 @@ def main():
 	for R_tablexstart in range (R_tablexstart, R_tablex):
 		text_buffer[R_table[R_tablexstart].address] = text_buffer[R_table[R_tablexstart].address] & 0xf000 | (text_buffer[R_table[R_tablexstart].address] + R_table[R_tablexstart].module_address) & 0x0fff
 
-# =============== Write to Out File ============
+
+	# =============== Write to Out File ============
 	# write P Entries
 	for i in range (0, P_tablex):
 		out_stream.write('P')
