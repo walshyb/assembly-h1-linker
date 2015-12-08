@@ -160,6 +160,16 @@ def processfile():
 
 				continue
 
+			if file_buffer[i + 1] != '\x00':	#if next value in buffer is 0 (meaning end of char[] / string)
+				iSave = i
+				for i in range(i, len(file_buffer)):
+					if file_buffer[i + 1] != '\x00':
+						fptr += file_buffer[i + 1]
+					else:
+						break
+				
+			ssize = len(fptr) + 1
+
 			if firstchar == 'P':
 
 				# for each index in P_table, check for duplicate symbols
@@ -237,7 +247,7 @@ def main():
 		ifilename = sys.argv[argx]
 		doifile()
 
-	print text_buffer[:10]
+	#print text_buffer[:10]
 
 	for E_tablexstart in range (E_tablexstart, E_tablex+1):
 		j = 0
@@ -275,8 +285,12 @@ def main():
 		temp = temp[2:] + temp[2:-2] + temp[:2]
 
 		out_stream.write(binascii.a2b_hex(temp))	# convert hex string to binary encoded hex and write address of P entry
-		out_stream.write(P_table[i].symptr)			# write symbol (assume symbol is one letter)
-		out_stream.write(chr(00))					# write padding to make symbol 4 digits
+
+		#for the number of characters in the symbol/label
+		for z in range(0, len(P_table[i].symptr)):
+			out_stream.write(P_table[i].symptr[z])	# print each character
+
+		out_stream.write(chr(00))					# write null string (0) so H1 Assembler knows when char[]/string stops
 
 	# write R Entries
 	for i in range (0, R_tablex):
