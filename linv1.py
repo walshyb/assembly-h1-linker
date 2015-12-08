@@ -54,7 +54,7 @@ def ierror():
 Parse input files and place entries, addresses, and instructions into respective tables
 '''
 def processfile():
-	global startadd, gots, module_address, P_table, E_table, R_table, P_tablex, E_tablex, R_tablex, text_buffer_size, text_buff_index
+	global startadd, gots, module_address, P_table, E_table, R_table, P_tablex, E_tablex, R_tablex, text_buffer_size, text_buff_index, saves
 	i = 0
 	address = 0
 	endptr = file_buffer[len(file_buffer)-1]	# last 2 hex bits
@@ -161,13 +161,12 @@ def processfile():
 				continue
 
 			if file_buffer[i + 1] != '\x00':	#if next value in buffer is 0 (meaning end of char[] / string)
-				iSave = i
 				for i in range(i, len(file_buffer)):
 					if file_buffer[i + 1] != '\x00':
 						fptr += file_buffer[i + 1]
 					else:
 						break
-				
+
 			ssize = len(fptr) + 1
 
 			if firstchar == 'P':
@@ -233,7 +232,7 @@ def doifile():
 Populate output file with linked data
 '''
 def main():
-	global ifilename, out_stream, in_stream, E_tablexstart,R_tablexstart,P_tablexstart, text_buffer_size, module_address, R_table
+	global ifilename, out_stream, in_stream, E_tablexstart,R_tablexstart,P_tablexstart, text_buffer_size, module_address, R_table, startadd, saves
 	j = 0
 	print("Author: Brandon Walsh")
 
@@ -247,20 +246,16 @@ def main():
 		ifilename = sys.argv[argx]
 		doifile()
 
-	#print text_buffer[:10]
-
 	for E_tablexstart in range (E_tablexstart, E_tablex+1):
 		j = 0
 
 		while j < P_tablex and P_table[j].symptr != E_table[E_tablexstart].symptr:
 		#while j < P_tablex and P_table[j].symptr == E_table[E_tablexstart].symptr: #probably the wrong one
 			j += 1
-
 		if j < P_tablex:
 			text_buffer[E_table[E_tablexstart].address] = text_buffer[E_table[E_tablexstart].address] & 0xf000 | (text_buffer[E_table[E_tablexstart].address] + P_table[j].address ) & 0x0fff
 		else:
 			break
-
 
 	#E_tablexstart += 1 #add one because loop above doesn't run inclusively
 
@@ -310,7 +305,7 @@ def main():
 		out_stream.write("R")
 
 		# convert int address to 4-bit hex string
-		temp = format(P_table[i].address, '04x')
+		temp = format(E_table[i].address, '04x')
 
 		# flip first two bits with last two
 		temp = temp[2:] + temp[2:-2] + temp[:2]
@@ -320,8 +315,16 @@ def main():
 
 	# if starting address specified (S Entry), then write starting address
 	if gots:
-		out_stream.write(saves)
-		out_stream.write(startadd)
+		out_stream.write(saves)	#write S or s entry
+
+		# convert int address to 4-bit hex string
+		temp = format(startadd, '04x')
+
+		# flip first two bits with last two
+		temp = temp[2:] + temp[2:-2] + temp[:2]
+
+		# convert hex string to binary encoded hex and write instruction
+		out_stream.write(binascii.a2b_hex(temp))
 
 	out_stream.write("T")
 
