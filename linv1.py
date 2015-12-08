@@ -78,16 +78,17 @@ def processfile():
 				print("ERROR: Linked program too big")
 				sys.exit()
 
-			iSave = i
+			module_address_save = module_address 	#save module address
 
-			for k in range (0, textsize, 2):
-				text_buffer[module_address] = file_buffer[i+1].encode('hex') + file_buffer[i].encode('hex')
-				text_buffer[module_address] = int(text_buffer[module_address], 16)
+			for k in range(0, textsize, 2):
+				temp = file_buffer[i+1].encode('hex') + file_buffer[i].encode('hex')
+				temp = int(temp, 16)
+				text_buffer[module_address]  = temp
 				i = i + 2
 				module_address += 1
 
-			module_address -= 1
-			module_address += textsize/2
+			module_address = module_address_save
+			module_address += textsize/2			#assign where module address should continue for next file
 			break
 
 		if firstchar != 'S' and firstchar != 's' and firstchar != 'P' and firstchar != 'E' and firstchar != 'R':
@@ -236,25 +237,28 @@ def main():
 		ifilename = sys.argv[argx]
 		doifile()
 
+	print text_buffer[:10]
+
 	for E_tablexstart in range (E_tablexstart, E_tablex+1):
 		j = 0
 
 		while j < P_tablex and P_table[j].symptr != E_table[E_tablexstart].symptr:
-		#while j < P_tablex and P_table[j].symptr == E_table[E_tablexstart].symptr:
+		#while j < P_tablex and P_table[j].symptr == E_table[E_tablexstart].symptr: #probably the wrong one
 			j += 1
 
 		if j < P_tablex:
 			text_buffer[E_table[E_tablexstart].address] = text_buffer[E_table[E_tablexstart].address] & 0xf000 | (text_buffer[E_table[E_tablexstart].address] + P_table[j].address ) & 0x0fff
 		else:
 			break
-	
+
+
 	#E_tablexstart += 1 #add one because loop above doesn't run inclusively
-	
+
 	# if there is an extra E entry
 	if E_tablexstart != E_tablex:
 		print("ERROR: Unresolved external symbol " + E_table[E_tablexstart].symptr)
 		sys.exit()
-	
+
 	for R_tablexstart in range (R_tablexstart, R_tablex):
 		text_buffer[R_table[R_tablexstart].address] = text_buffer[R_table[R_tablexstart].address] & 0xf000 | (text_buffer[R_table[R_tablexstart].address] + R_table[R_tablexstart].module_address) & 0x0fff
 
@@ -265,7 +269,7 @@ def main():
 		out_stream.write('P')
 
 		# convert int address to 4-bit hex string
-		temp = format(P_table[i].address, '04x') 
+		temp = format(P_table[i].address, '04x')
 
 		# flip first two bits with last two
 		temp = temp[2:] + temp[2:-2] + temp[:2]
