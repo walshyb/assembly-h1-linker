@@ -160,10 +160,14 @@ def processfile():
 
 				continue
 
-			if file_buffer[i + 1] != '\x00':	#if next value in buffer is 0 (meaning end of char[] / string)
-				for i in range(i, len(file_buffer)):
+			# check if symbol/label is more than one character
+			if file_buffer[i + 1] != '\x00':	# if next value in buffer is 0 (meaning end of char[] / string)
+
+				for i in range(i, len(file_buffer)):	# for the length of the file_buffer
+
+					# check if next value is 0 (end of the symbol/label name)
 					if file_buffer[i + 1] != '\x00':
-						fptr += file_buffer[i + 1]
+						fptr += file_buffer[i + 1]	# add next char to fptr (which is the symbol/label name)
 					else:
 						break
 
