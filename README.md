@@ -27,7 +27,7 @@ A mob file is the result of assembling a symbolic assembly file (.mas file) that
 
 .mob files store and format information from the .mas file by separating each type of data into different entires:
 
-##### P Entry
+### P Entry
 P Entries contain symbols and the addresses where they were declared
 
 **module1.mas**:
@@ -45,7 +45,7 @@ Type  Address   Symbol
 P     0003       x
 ```
 
-##### E Entry
+### E Entry
 E Entries contain symbols and the addresses where they are used
 
 E Entry for **module1.mas**:
@@ -54,7 +54,7 @@ Type  Address   Symbol
 E     0001       y
 ```
 
-##### R Entry
+### R Entry
 R Entries are entries for relative/relocatable symbols.  An R Entry contains the address of where a symbol is used (similar to an E Entry), but does not contain the symbol itself because once the two modules are linked, the R Entry will only be an absolute address (due to the fact that it does not affect the addresses of another module).
 
 **module2.mas**:
