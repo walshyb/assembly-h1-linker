@@ -7,6 +7,13 @@ Symbmolic Assembly Code: *.mas <br/>
 Linkable Module: *.mob <br />
 Machine Code: *.mac <br />
 
+## Usage
+To use the linker, you first need two .mob files assembled with Anthony Dos Reis's assembler (./mas).
+
+```
+$ python linv1.py module1.mob module2.mob
+```
+
 ## .mob Files
 
 A mob file is the result of assembling a symbolic assembly file (.mas file) that either declares a public or extern symbol.  
