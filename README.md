@@ -21,9 +21,9 @@ A mob file is the result of assembling a symbolic assembly file (.mas file) that
 .mob files are broken up into two sections: 
 
 1. Header
-  Contains entries, data values, and symbols (when applicable)
+  1. Contains entries, data values, and symbols (when applicable)
 2. Text
-  Contains instructions to run
+  1. Contains instructions to run
 
 .mob files store and format information from the .mas file by separating each type of data into different entires:
 
